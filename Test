@@ -1,0 +1,59 @@
+package com.baeldung.spring.drools.app;
+
+import org.apache.commons.text.similarity.LevenshteinDistance;
+import org.apache.commons.text.similarity.CosineSimilarity;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.pricing.PricingClient;
+import software.amazon.awssdk.services.pricing.model.GetProductsRequest;
+import software.amazon.awssdk.services.pricing.model.GetProductsResponse;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class Test {
+    public static void main(String[] args) {
+        String word1 = "EUW2-Notebk:ml.m5d.4xlarge";
+        String word2 = "CAN1-Notebk:ml.m5d.16xlarge";
+        String word3 = "EU-RStudio:RSessionGateway-NO-CHARGE";
+
+        levenshtein(word1, word3);
+        cosineSimilarity(word1, word3);
+    }
+
+    private static void levenshtein(String c1, String c2) {
+        // Using Levenshtein Distance algorithm
+        int levenshteinDistance = LevenshteinDistance.getDefaultInstance().apply(c1, c2);
+        double levenshteinSimilarity = 1.0 - (double) levenshteinDistance / Math.max(c1.length(), c2.length());
+        System.out.printf("levenshtein: %s\n", levenshteinSimilarity);
+    }
+
+    private static void cosineSimilarity(String c1, String c2) {
+        // Using Cosine Similarity algorithm
+        CosineSimilarity dist = new CosineSimilarity();
+        Map<CharSequence, Integer> leftVector =
+                Arrays.stream(c1.split(""))
+                        .collect(Collectors.toMap(c -> c, c -> 1, Integer::sum));
+        Map<CharSequence, Integer> rightVector =
+                Arrays.stream(c2.split(""))
+                        .collect(Collectors.toMap(c -> c, c -> 1, Integer::sum));
+
+        System.out.printf("cosineSimilarity: %s\n", dist.cosineSimilarity(leftVector,rightVector));
+    }
+
+    private static void print() {
+        String serviceCode = "AmazonSageMaker"; // Service code for Amazon SageMaker
+        GetProductsRequest request = GetProductsRequest.builder()
+                .serviceCode(serviceCode)
+                .build();
+        Region region = Region.US_EAST_1; // Specify the desired region
+        PricingClient pricingClient = PricingClient.builder()
+                .region(region)
+                .build();
+        GetProductsResponse response = pricingClient.getProducts(request);
+        // Extract the relevant pricing information from the priceListItem object
+        // For example, you can access the price dimensions, terms, and other details
+        // using priceListItem.attributes() and priceListItem.terms() methods
+        response.priceList().forEach(System.out::println);
+    }
+}
